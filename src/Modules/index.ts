@@ -61,16 +61,21 @@ export class EmailSystem <GenericMetadata extends BaseMetadata <GenericLockId>, 
 	public readonly email: Email;
 	public readonly aws: Aws;
 	public readonly scheduler: Scheduler <this>;
-	public readonly nodeMailer: ReturnType<typeof Nodemailer.createTransport>;
+	public readonly nodemailer: ReturnType<typeof Nodemailer.createTransport>;
 	constructor({callbacks, email, aws, queueItemTimeout}: Pick<EmailSystem<GenericMetadata, GenericLockId>, 'callbacks' | 'email' | 'aws'> & { queueItemTimeout: number })
 	{
 		this.callbacks = callbacks;
 		this.email = email;
 		this.aws = aws;
 		this.scheduler = new Scheduler({queueItemTimeout, system: this});
-		const { accessKeyId, secretAccessKey } = this.aws;
-		const ses = new SES({accessKeyId, secretAccessKey, apiVersion: aws.ses.version ?? AWS_SES_DEFAULT_VERSION});
-		this.nodeMailer = Nodemailer.createTransport({SES: ses});
+		this.nodemailer = this.generateNodemailer();
 	};
 	public send = send;
+	private generateNodemailer()
+	{
+		const { accessKeyId, secretAccessKey } = this.aws;
+		const ses = new SES({accessKeyId, secretAccessKey, apiVersion: this.aws.ses.version ?? AWS_SES_DEFAULT_VERSION});
+		const nodemailer = Nodemailer.createTransport({SES: ses});
+		return nodemailer;
+	};
 };

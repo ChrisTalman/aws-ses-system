@@ -68,7 +68,7 @@ export class ScheduledEmail
 		let result: any;
 		try
 		{
-			result = await this.system.nodeMailer.sendMail(this.email);
+			result = await this.system.nodemailer.sendMail(this.email);
 		}
 		catch (error)
 		{

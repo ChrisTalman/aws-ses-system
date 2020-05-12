@@ -56,7 +56,7 @@ export class Scheduler <GenericEmailSystem extends EmailSystem <any, any>>
 			if (this.rateLimit !== undefined && Date.now() >= this.rateLimit.reset)
 			{
 				this.rateLimit.reset = Date.now() + RATE_LIMIT_INTERVAL_MILLISECONDS;
-				this.rateLimit.remaining = this.system.aws.rateLimits.second;
+				this.rateLimit.remaining = this.system.aws.ses.rateLimits.second;
 			};
 			this.recordRateLimitConsumed();
 			return true;
@@ -96,7 +96,7 @@ export class Scheduler <GenericEmailSystem extends EmailSystem <any, any>>
 	private processQueue()
 	{
 		if (this.rateLimit === undefined) throw new Error('Rate limit undefined');
-		const processable = this.queue.slice(0, this.system.aws.rateLimits.second);
+		const processable = this.queue.slice(0, this.system.aws.ses.rateLimits.second);
 		for (let item of processable)
 		{
 			item.execute();
@@ -109,7 +109,7 @@ export class Scheduler <GenericEmailSystem extends EmailSystem <any, any>>
 		{
 			this.rateLimit =
 			{
-				remaining: this.system.aws.rateLimits.second,
+				remaining: this.system.aws.ses.rateLimits.second,
 				reset: Date.now() + RATE_LIMIT_INTERVAL_MILLISECONDS
 			};
 		};
