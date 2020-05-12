@@ -1,0 +1,23 @@
+{
+	"name": "@chris-talman/aws-ses-system",
+	"version": "1.0.0",
+	"licence": "UNLICENSED",
+	"dependencies": {
+		"@chris-talman/isomorphic-utilities": "1.12.1",
+		"@types/nodemailer": "6.4.0",
+		"aws-sdk": "2.674.0",
+		"moment": "2.25.3",
+		"nodemailer": "6.4.6"
+	},
+	"devDependencies": {
+		"ts-loader": "7.0.4",
+		"typescript": "3.8.3",
+		"webpack": "4.43.0",
+		"webpack-cli": "3.3.11",
+		"webpack-node-externals": "1.7.2"
+	},
+	"scripts": {
+		"start": "./node_modules/.bin/nodemon",
+		"build": "./node_modules/.bin/webpack"
+	}
+}
