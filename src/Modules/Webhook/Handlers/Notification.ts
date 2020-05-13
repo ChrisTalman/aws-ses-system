@@ -11,7 +11,6 @@ import { EmailWebookParseError, EmailWebhookInvalid } from 'src/Modules/Errors';
 
 // Types
 import { PartialDeep } from '@chris-talman/types-helpers';
-import { EmailTags } from 'src/Modules';
 import { Email } from 'src/Modules/Send';
 import { NotificationMessage } from 'src/Modules/Webhook';
 export type Event =  UntypedEvent | DeliveryEvent | BounceEvent | ComplaintEvent;
@@ -31,6 +30,10 @@ export interface EventMail
 	timestamp: string;
 	destination: Array<string>;
 	tags: EventMailTags<EmailTags>;
+};
+interface EmailTags
+{
+	emailId: string;
 };
 export type EventMailTags <GenericMetadata> = { [GenericKey in keyof GenericMetadata]: Array<string>; };
 export interface UntypedEvent extends BaseEvent

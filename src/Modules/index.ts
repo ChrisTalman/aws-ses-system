@@ -59,10 +59,6 @@ interface AwsSns
 {
 	version?: string;
 };
-export interface EmailTags
-{
-	emailId: string;
-};
 
 // Constants
 const AWS_SES_DEFAULT_VERSION = '2010-12-01';
