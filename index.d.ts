@@ -12,7 +12,8 @@ declare module '@chris-talman/aws-ses-system'
 		public readonly webhookHandlers?: WebhookHandlers <GenericMetadata, GenericLockId, GenericEmailHandlerType>;
 		public readonly email: EmailOptions;
 		public readonly aws: Aws;
-		constructor({callbacks, webhookHandlers, email, aws, queueItemTimeout}: Pick<EmailSystem<GenericMetadata, GenericLockId>, 'callbacks' | 'webhookHandlers' | 'email' | 'aws'> & { queueItemTimeout: number });
+		public readonly queueItemTimeout?: number;
+		constructor(parameters: Pick<EmailSystem<GenericMetadata, GenericLockId>, 'callbacks' | 'webhookHandlers' | 'email' | 'aws' | 'queueItemTimeout'>);
 		public send
 			<GenericEmailSystem extends EmailSystem <GenericMetadata, GenericLockId, GenericEmailHandlerType>, GenericMetadata extends EmailBaseMetadata, GenericLockId>
 			(parameters: { email: CustomSendMailOptions, metadata: GenericMetadata, lockId?: GenericLockId, useQueue?: boolean, emailId?: string }):

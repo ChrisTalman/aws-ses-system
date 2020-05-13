@@ -11,6 +11,7 @@ import { Scheduler } from './Scheduler';
 
 // Types
 import { PartialDeep } from '@chris-talman/types-helpers';
+import { Address as MailOptionsFrom } from 'nodemailer/lib/mailer';
 import { Email, EmailBaseMetadata } from './Send';
 interface Callbacks <GenericMetadata extends EmailBaseMetadata, GenericLockId, GenericEmailHandlerType extends string | undefined>
 {
@@ -32,21 +33,21 @@ type WebhookHandlers <GenericMetadata extends EmailBaseMetadata, GenericLockId, 
 	:
 		undefined
 ;
-interface EmailOptions
+interface MailOptions
 {
-	from: string;
-	fromName: string;
+	from: MailOptionsFrom;
 };
 interface Aws
 {
-	accessKeyId: string;
-	secretAccessKey: string;
-	configurationSet: string;
 	ses: AwsSes;
 	sns?: AwsSns;
 };
 interface AwsSes
 {
+	accessKeyId: string;
+	secretAccessKey: string;
+	region: string;
+	configurationSet: string;
 	version?: string;
 	rateLimits: AwsSesRateLimits;
 };
@@ -66,20 +67,22 @@ const AWS_SNS_DEFAULT_VERSION = '2010-03-31';
 
 export class EmailSystem <GenericMetadata extends EmailBaseMetadata, GenericLockId = void, GenericEmailHandlerType extends string | undefined = undefined>
 {
+	public readonly mailOptions: MailOptions;
 	public readonly callbacks: Callbacks <GenericMetadata, GenericLockId, any>;
 	public readonly webhookHandlers?: WebhookHandlers <GenericMetadata, GenericLockId, GenericEmailHandlerType>;
-	public readonly email: EmailOptions;
 	public readonly aws: Aws;
+	public readonly queueItemTimeout?: number;
 	public readonly scheduler: Scheduler <this>;
 	public readonly nodemailer: ReturnType<typeof Nodemailer.createTransport>;
 	public readonly sns: SNS;
-	constructor({callbacks, webhookHandlers, email, aws, queueItemTimeout}: Pick<EmailSystem<GenericMetadata, GenericLockId>, 'callbacks' | 'webhookHandlers' | 'email' | 'aws'> & { queueItemTimeout: number })
+	constructor({mailOptions, callbacks, webhookHandlers, aws, queueItemTimeout}: Pick<EmailSystem<GenericMetadata, GenericLockId>, 'mailOptions' | 'callbacks' | 'webhookHandlers' | 'aws' | 'queueItemTimeout'>)
 	{
 		this.callbacks = callbacks;
 		this.webhookHandlers = webhookHandlers;
-		this.email = email;
+		this.mailOptions = mailOptions;
 		this.aws = aws;
-		this.scheduler = new Scheduler({queueItemTimeout, system: this});
+		this.queueItemTimeout = queueItemTimeout;
+		this.scheduler = new Scheduler({system: this});
 		this.nodemailer = this.generateNodemailer();
 		this.sns = new SNS({apiVersion: this.aws.sns?.version ?? AWS_SNS_DEFAULT_VERSION});
 	};
@@ -87,7 +90,7 @@ export class EmailSystem <GenericMetadata extends EmailBaseMetadata, GenericLock
 	public webhook = webhook;
 	private generateNodemailer()
 	{
-		const { accessKeyId, secretAccessKey } = this.aws;
+		const { accessKeyId, secretAccessKey } = this.aws.ses;
 		const ses = new SES({accessKeyId, secretAccessKey, apiVersion: this.aws.ses.version ?? AWS_SES_DEFAULT_VERSION});
 		const nodemailer = Nodemailer.createTransport({SES: ses});
 		return nodemailer;

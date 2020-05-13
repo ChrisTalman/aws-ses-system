@@ -100,7 +100,7 @@ export async function send <GenericEmailSystem extends EmailSystem <GenericMetad
 		html: customMailOptions.html,
 		ses:
 		{
-			ConfigurationSetName: this.aws.configurationSet,
+			ConfigurationSetName: this.aws.ses.configurationSet,
 			Tags: generateMetadataSesTags({emailId: email.id})
 		},
 		headers: customMailOptions.headers
@@ -115,8 +115,8 @@ function generateMailFrom <GenericLockId> ({mailOptions, system}: {mailOptions: 
 {
 	let from: SendMailOptions['from'] =
 	{
-		address: system.email.from,
-		name: system.email.fromName
+		address: system.mailOptions.from.address,
+		name: system.mailOptions.from.name
 	};
 	if (mailOptions.from)
 	{

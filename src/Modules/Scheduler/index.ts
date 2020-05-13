@@ -19,6 +19,7 @@ interface RateLimit
 
 // Constants
 export const RATE_LIMIT_INTERVAL_MILLISECONDS = 1000;
+const DEFAULT_QUEUE_ITEM_TIMEOUT = 180000;
 
 export class Scheduler <GenericEmailSystem extends EmailSystem <any, any, any>>
 {
@@ -31,10 +32,8 @@ export class Scheduler <GenericEmailSystem extends EmailSystem <any, any, any>>
 		If returns `false`, request will not proceed, and `RateLimitError` will throw, unless `options.useQueue` is enabled.
 	*/
 	private rateLimitResetTimeout?: RateLimitResetTimeout;
-	private queueItemTimeout = 180000;
-	constructor({queueItemTimeout, system}: {queueItemTimeout?: number, system: GenericEmailSystem})
+	constructor({system}: {system: GenericEmailSystem})
 	{
-		if (typeof queueItemTimeout === 'number') this.queueItemTimeout = queueItemTimeout;
 		this.system = system;
 	};
 	public async schedule({mailOptions, email, useQueue}: {mailOptions: SendMailOptions, email: Email <any, any>, useQueue: boolean})
@@ -71,7 +70,7 @@ export class Scheduler <GenericEmailSystem extends EmailSystem <any, any, any>>
 	};
 	private async timeoutQueueItem(item: ScheduledEmail)
 	{
-		await delay(this.queueItemTimeout);
+		await delay(this.resolveQueueItemTimeout());
 		this.removeQueueItem(item);
 		const timeoutError = new EmailQueueTimeoutError();
 		item.promiseController.reject(timeoutError);
@@ -125,6 +124,11 @@ export class Scheduler <GenericEmailSystem extends EmailSystem <any, any, any>>
 		const queueItemIndex = this.queue.findIndex(currentItem => currentItem === item);
 		if (queueItemIndex === -1) return;
 		this.queue.splice(queueItemIndex, 1);
+	};
+	private resolveQueueItemTimeout()
+	{
+		const timeout = this.system.queueItemTimeout ?? DEFAULT_QUEUE_ITEM_TIMEOUT;
+		return timeout;
 	};
 };
 
