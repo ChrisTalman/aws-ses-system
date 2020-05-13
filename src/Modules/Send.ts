@@ -1,9 +1,12 @@
 'use strict';
 
+// External Modules
+import { ulid } from 'ulid';
+
 // Intenral Modules
 import { generateMetadataSesTags } from 'src/Modules/Utilities/GenerateMetadataSesTags';
 import { EmailUnwantedError } from './Errors';
-import { EmailSystem, BaseMetadata } from './';
+import { EmailSystem } from './';
 
 // Types
 import { SendMailOptions as BaseSendMailOptions } from 'nodemailer';
@@ -25,21 +28,62 @@ export interface CustomSendMailOptions extends Required<Pick<SendMailOptions, 't
 {
 	from?: string | Partial<SendMailOptionsAddress>;
 };
+export interface Email <GenericMetadata extends EmailBaseMetadata, GenericLockId>
+{
+	id: string;
+	/** Unix milliseconds at which the email was queued for sending. */
+	queued?: number;
+	recipient: string;
+	bounce?: EmailBounce;
+	complaint?: EmailComplaint;
+	delivery?: EmailDelivery;
+	metadata: GenericMetadata;
+	/** Indicates whether a bounce or complaint is acceptable and should be included in considerations about sending future emails to the same address. */
+	forgiven?: boolean;
+	lockId?: GenericLockId;
+};
+export interface EmailBounce
+{
+	id: string;
+	bounceType: string;
+	bounceSubType: string;
+	/** Unix milliseconds. */
+	timestamp: number;
+};
+export interface EmailComplaint
+{
+	id: string;
+	/** Unix milliseconds. */
+	timestamp: number;
+};
+export interface EmailDelivery
+{
+	/** Unix milliseconds. */
+	timestamp: number;
+};
+export type EmailBaseMetadata = object;
 
 /**
 	Sends email if recipient has no outstanding bounces or complaints.
 	If recipient has outstanding bounces or complaints, throws `MailUnwantedError`.
 */
-export async function send <GenericMetadata extends BaseMetadata <GenericLockId>, GenericLockId>
+export async function send <GenericMetadata extends EmailBaseMetadata, GenericLockId>
 (
 	this: EmailSystem <GenericMetadata, GenericLockId>,
-	{ email, metadata, lockId, useQueue = false, metadataId }:
+	{ email: customMailOptions, metadata, lockId, useQueue = false, metadataId }:
 	{ email: CustomSendMailOptions, metadata: GenericMetadata, lockId?: GenericLockId, useQueue?: boolean, metadataId?: string }
 )
 {
+	const recipient = resolveRecipient(customMailOptions);
+	const email: Email <GenericMetadata, GenericLockId> =
+	{
+		id: ulid(),
+		recipient,
+		metadata
+	};
 	if (lockId)
 	{
-		metadata.lockId = lockId;
+		email.lockId = lockId;
 		const locked = await this.callbacks.isLocked({id: lockId});
 		if (locked)
 		{
@@ -47,55 +91,67 @@ export async function send <GenericMetadata extends BaseMetadata <GenericLockId>
 			return;
 		};
 	};
-	const recipient = typeof email.to === 'string' ? email.to : email.to.address;
-	const unwanted = await this.callbacks.isUnwanted({recipient});
-	if (unwanted)
-	{
-		throw new EmailUnwantedError();
-	};
-	const metadataDocument = await this.callbacks.insertMetadata({id: metadataId, metadata});
 	const mailOptions: SendMailOptions =
 	{
-		to: email.to,
-		from: generateMailFrom({email, system: this}),
-		subject: email.subject,
-		text: email.text,
-		html: email.html,
+		to: customMailOptions.to,
+		from: generateMailFrom({mailOptions: customMailOptions, system: this}),
+		subject: customMailOptions.subject,
+		text: customMailOptions.text,
+		html: customMailOptions.html,
 		ses:
 		{
 			ConfigurationSetName: this.aws.configurationSet,
-			Tags: generateMetadataSesTags({metadataId: metadataDocument.id})
+			Tags: generateMetadataSesTags({emailId: email.id})
 		},
-		headers: email.headers
+		headers: customMailOptions.headers
 	};
-	const result = await this.scheduler.schedule({email: mailOptions, metadata, useQueue});
+	await isEmailUnwanted({email: mailOptions, system: this});
+	await this.callbacks.insertEmail({id: email.id, email});
+	const result = await this.scheduler.schedule({mailOptions, email, useQueue});
 	return result;
 };
 
-function generateMailFrom <GenericLockId> ({email, system}: {email: CustomSendMailOptions, system: EmailSystem <any, GenericLockId>})
+function generateMailFrom <GenericLockId> ({mailOptions, system}: {mailOptions: CustomSendMailOptions, system: EmailSystem <any, GenericLockId>})
 {
 	let from: SendMailOptions['from'] =
 	{
 		address: system.email.from,
 		name: system.email.fromName
 	};
-	if (email.from)
+	if (mailOptions.from)
 	{
-		if (typeof email.from === 'object')
+		if (typeof mailOptions.from === 'object')
 		{
-			if (email.from.address !== undefined)
+			if (mailOptions.from.address !== undefined)
 			{
-				from.address = email.from.address;
+				from.address = mailOptions.from.address;
 			};
-			if (email.from.name !== undefined)
+			if (mailOptions.from.name !== undefined)
 			{
-				from.name = email.from.name;
+				from.name = mailOptions.from.name;
 			};
 		}
 		else
 		{
-			from = email.from;
+			from = mailOptions.from;
 		};
 	};
 	return from;
+};
+
+export async function isEmailUnwanted({email, system}: {email: SendMailOptions, system: EmailSystem <any, any>})
+{
+	const recipient = resolveRecipient(email);
+	const unwanted = await system.callbacks.isUnwanted({recipient});
+	if (unwanted)
+	{
+		throw new EmailUnwantedError();
+	};
+	return unwanted;
+};
+
+function resolveRecipient(mailOptions: CustomSendMailOptions)
+{
+	const recipient = typeof mailOptions.to === 'string' ? mailOptions.to : mailOptions.to.address;
+	return recipient;
 };

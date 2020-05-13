@@ -9,8 +9,7 @@ import { EmailSystem } from 'src/Modules';
 import { ScheduledEmail } from './ScheduledEmail';
 
 // Types
-import { BaseMetadata } from 'src/Modules';
-import { SendMailOptions } from 'src/Modules/Send';
+import { Email, SendMailOptions } from 'src/Modules/Send';
 interface Queue extends Array<ScheduledEmail> {};
 interface RateLimit
 {
@@ -19,9 +18,9 @@ interface RateLimit
 };
 
 // Constants
-const RATE_LIMIT_INTERVAL_MILLISECONDS = 1000;
+export const RATE_LIMIT_INTERVAL_MILLISECONDS = 1000;
 
-export class Scheduler <GenericEmailSystem extends EmailSystem <any, any>>
+export class Scheduler <GenericEmailSystem extends EmailSystem <any, any, any>>
 {
 	public readonly system: GenericEmailSystem;
 	public readonly queue: Queue = [];
@@ -38,9 +37,9 @@ export class Scheduler <GenericEmailSystem extends EmailSystem <any, any>>
 		if (typeof queueItemTimeout === 'number') this.queueItemTimeout = queueItemTimeout;
 		this.system = system;
 	};
-	public async schedule({email, metadata, useQueue}: {email: SendMailOptions, metadata: BaseMetadata <any>, useQueue: boolean})
+	public async schedule({mailOptions, email, useQueue}: {mailOptions: SendMailOptions, email: Email <any, any>, useQueue: boolean})
 	{
-		const scheduledEmail = new ScheduledEmail({email, metadata, useQueue, scheduler: this});
+		const scheduledEmail = new ScheduledEmail({mailOptions, email, useQueue, scheduler: this, system: this.system});
 		const result = await scheduledEmail.promiseController.promise;
 		return result;
 	};

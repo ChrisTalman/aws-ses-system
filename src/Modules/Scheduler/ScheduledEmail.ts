@@ -6,31 +6,35 @@ import { PromiseController } from '@chris-talman/isomorphic-utilities';
 // Intenral Modules
 import { EmailSystem } from 'src/Modules';
 import { Scheduler } from 'src/Modules/Scheduler';
+import { EmailInvalidError } from 'src/Modules/Errors';
+import { isEmailUnwanted } from 'src/Modules/Send';
 
 // Types
-import { BaseMetadata } from 'src/Modules';
-import { SendMailOptions } from 'src/Modules/Send';
+import { Email, SendMailOptions } from 'src/Modules/Send';
 
 // Constants
-const INVALID_ADDRESS_ERROR_MESSAGE_EXPRESSION = /^InvalidParameterValue: Local address contains control or whitespace$/;
+import { RATE_LIMIT_INTERVAL_MILLISECONDS } from './';
+const INVALID_PARAMETER_VALUE_ERROR_MESSAGE_EXPRESSION = /^InvalidParameterValue/;
 
 export class ScheduledEmail
 {
-	public readonly system: EmailSystem <any, any>;
-	public readonly scheduler: Scheduler <any>;
-	public readonly email: SendMailOptions;
-	public readonly metadata: BaseMetadata <any>;
+	public readonly mailOptions: SendMailOptions;
+	public readonly email: Email <any, any>;
 	public readonly useQueue: boolean;
-	public readonly metadataId: string;
+	public readonly scheduler: Scheduler <any>;
+	public readonly system: EmailSystem <any, any>;
+	/** Unix milliseconds. */
+	public readonly created: number;
 	public readonly promiseController: PromiseController <void>;
 	private executing = false;
 	private executed = false;
-	constructor({email, metadata, useQueue, scheduler}: Pick<ScheduledEmail, 'email' | 'metadata' | 'useQueue' | 'scheduler'>)
+	constructor({mailOptions, email, useQueue, scheduler, system}: Pick<ScheduledEmail, 'mailOptions' | 'email' | 'useQueue' | 'scheduler' | 'system'>)
 	{
+		this.mailOptions = mailOptions;
 		this.email = email;
-		this.metadata = metadata;
 		this.useQueue = useQueue;
 		this.scheduler = scheduler;
+		this.system = system;
 		this.promiseController = new PromiseController();
 		this.execute();
 	};
@@ -38,6 +42,20 @@ export class ScheduledEmail
 	{
 		if (this.executing || this.executed) return;
 		this.executing = true;
+		if (Date.now() > this.created + RATE_LIMIT_INTERVAL_MILLISECONDS)
+		{
+			try
+			{
+				await isEmailUnwanted({email: this.mailOptions, system: this.system});
+			}
+			catch (error)
+			{
+				this.scheduler.removeQueueItem(this);
+				this.markExecuted();
+				this.reject(error);
+				return;
+			};
+		};
 		let rateLimitConsumed = false;
 		try
 		{
@@ -52,11 +70,11 @@ export class ScheduledEmail
 			this.executing = false;
 			return;
 		};
-		if (this.metadata.lockId)
+		if (this.email.metadata.lockId)
 		{
 			try
 			{
-				await this.system.callbacks.insertLock({id: this.metadata.lockId, metadataId: this.metadataId});
+				await this.system.callbacks.insertLock({id: this.email.metadata.lockId, emailId: this.email.id});
 			}
 			catch (error)
 			{
@@ -68,7 +86,7 @@ export class ScheduledEmail
 		let result: any;
 		try
 		{
-			result = await this.system.nodemailer.sendMail(this.email);
+			result = await this.system.nodemailer.sendMail(this.mailOptions);
 		}
 		catch (error)
 		{
@@ -76,35 +94,37 @@ export class ScheduledEmail
 			{
 				this.executing = false;
 				this.scheduler.guaranteeQueueItem(this);
-				if (this.metadata.lockId)
+				if (this.email.metadata.lockId)
 				{
 					try
 					{
-						await this.system.callbacks.deleteLock({id: this.metadata.lockId});
+						await this.system.callbacks.deleteLock({id: this.email.metadata.lockId});
 					}
 					catch (error)
 					{
-						console.error(`Failed to delete lock after throttling. Metadata ID: ${this.metadataId}`);
+						console.error(`Failed to delete lock after throttling. Email ID: ${this.email.id}`);
 						this.reject(error);
 					};
 				};
 			}
-			else if (error.code === 'InvalidParameterValue' && INVALID_ADDRESS_ERROR_MESSAGE_EXPRESSION.test(error.message))
+			else if (error.code === 'InvalidParameterValue' && INVALID_PARAMETER_VALUE_ERROR_MESSAGE_EXPRESSION.test(error.message))
 			{
-				if (this.metadata.lockId)
+				const emailInvalidError = new EmailInvalidError({sourceMessage: error.message});
+				if (this.email.metadata.lockId)
 				{
 					try
 					{
-						await this.system.callbacks.deleteLock({id: this.metadata.lockId});
-						console.log(`Deleted lock after nonlockable error. Metadata ID: ${this.metadataId}`);
+						await this.system.callbacks.deleteLock({id: this.email.metadata.lockId});
+						console.log(`Deleted lock after nonlockable error. Email ID: ${this.email.id}`);
 					}
 					catch (error)
 					{
-						console.error(`Failed to delete lock after nonlockable error. Metadata ID: ${this.metadataId}`);
+						console.error(`Failed to delete lock after nonlockable error. Email ID: ${this.email.id}`);
+						console.error(`Instigator error:\n${emailInvalidError}`);
 						this.reject(error);
 					};
 				};
-				this.reject(error);
+				this.reject(emailInvalidError);
 			}
 			else
 			{
