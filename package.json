@@ -5,6 +5,7 @@
 	"licence": "UNLICENSED",
 	"dependencies": {
 		"@chris-talman/isomorphic-utilities": "1.12.1",
+		"@hapi/joi": "17.1.1",
 		"@nathancahill/sns-validator": "0.3.4",
 		"@types/nodemailer": "6.4.0",
 		"aws-sdk": "2.674.0",

@@ -12,7 +12,7 @@ import { EmailWebookParseError, EmailWebhookInvalid } from 'src/Modules/Errors';
 // Types
 import { PartialDeep } from '@chris-talman/types-helpers';
 import { EmailTags } from 'src/Modules';
-import { Email, EmailBaseMetadata } from 'src/Modules/Send';
+import { Email } from 'src/Modules/Send';
 import { NotificationMessage } from 'src/Modules/Webhook';
 export type Event =  UntypedEvent | DeliveryEvent | BounceEvent | ComplaintEvent;
 export interface BaseEvent
@@ -124,29 +124,29 @@ const JOI_OPTIONS: Joi.ValidationOptions =
 	allowUnknown: true
 };
 
-export async function handleNotification <GenericMetadata extends EmailBaseMetadata, GenericLockId> ({message, system}: {message: NotificationMessage, system: EmailSystem <GenericMetadata, GenericLockId>})
+export async function handleNotification <GenericEmailSystem extends EmailSystem <any, any, any>> ({message, system}: {message: NotificationMessage, system: GenericEmailSystem})
 {
 	const event = parseEvent({message});
-	if (!event) return false;
+	if (!event) return;
 	if (event.mail.destination.length > 1)
 	{
 		console.error('Email notification has multiple destinations');
-		return true;
+		return;
 	};
 	const recipient = event.mail.destination[0];
 	if (!event.mail.tags)
 	{
 		console.error('Mail tags missing:', event.mail.messageId);
-		return false;
+		return;
 	};
 	const tags = generateMetadataFromSesTags(event.mail.tags);
 	if (typeof tags.emailId !== 'string')
 	{
 		console.error('Email ID missing in mail tags:', event.mail.messageId);
 		console.error('Mail tags:\n' + tags);
-		return false;
+		return;
 	};
-	const update: PartialDeep<Email<GenericMetadata, GenericLockId>> =
+	const update: PartialDeep<Email<any, any>> =
 	{
 		queued: (new Date(event.mail.timestamp)).valueOf(),
 		recipient
@@ -178,21 +178,27 @@ export async function handleNotification <GenericMetadata extends EmailBaseMetad
 	};
 	const email = await system.callbacks.updateEmail({id: tags.emailId, update});
 	const handlerType = system.callbacks.resolveEmailHandlerType({email});
-	const handler = system.emailHandlers[handlerType];
-	const handled = await handler({event, email});
-	if (handled)
+	if (system.webhookHandlers !== undefined)
 	{
-		const { lockId } = email;
-		if (lockId)
+		const handler = system.webhookHandlers[handlerType];
+		if (handler)
 		{
-			await system.callbacks.deleteLock({id: lockId});
+			let handled = true;
+			try
+			{
+				await handler({email});
+			}
+			catch (error)
+			{
+				console.error(error);
+				handled = false;
+			};
+			if (handled && email.lockId)
+			{
+				await system.callbacks.deleteLock({id: email.lockId});
+			};
 		};
-	}
-	else
-	{
-		return false;
 	};
-	return true;
 };
 
 /** Parses event data JSON from body, and validates its data structure. */

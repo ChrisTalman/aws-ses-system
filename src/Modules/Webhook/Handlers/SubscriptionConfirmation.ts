@@ -12,7 +12,6 @@ import { SubscriptionMessage } from 'src/Modules/Webhook';
 export async function handleSubscriptionConfirmation({message, system}: {message: SubscriptionMessage, system: EmailSystem <any, any>})
 {
 	await confirmSubscription({message, system});
-	return true;
 };
 
 function confirmSubscription({message, system}: {message: SubscriptionMessage, system: EmailSystem <any, any>})

@@ -9,7 +9,6 @@ import { verifySignature } from './Signature';
 
 // Handlers
 import { handleSubscriptionConfirmation } from './Handlers/SubscriptionConfirmation';
-import { handleUnsubscribeConfirmation } from './Handlers/UnsubscribeConfirmation';
 import { handleNotification } from './Handlers/Notification';
 
 // Types
@@ -41,8 +40,8 @@ interface Handlers
 {
     [eventType: string]: Handler;
 };
-type Handler = 'ignore' | HandlerCallback;
-type HandlerCallback = ({message: Message, system: EmailSystem}) => Promise<boolean>;
+type Handler = HandlerCallback | null;
+type HandlerCallback = ({message: Message, system: GenericEmailSystem}) => Promise<void>;
 
 // Constants
 export const MESSAGE_TYPE = mirror
@@ -57,24 +56,24 @@ const MESSAGE_TYPE_SUBSCRIPTION = createSubsetObject(MESSAGE_TYPE, ['Subscriptio
 const HANDLERS: Handlers =
 {
 	[MESSAGE_TYPE.SubscriptionConfirmation]: handleSubscriptionConfirmation,
-	[MESSAGE_TYPE.UnsubscribeConfirmation]: handleUnsubscribeConfirmation,
+	[MESSAGE_TYPE.UnsubscribeConfirmation]: null,
 	[MESSAGE_TYPE.Notification]: handleNotification
 };
 
-export async function webhook(this: EmailSystem <any, any>, {message}: {message: Message})
+export async function webhook <GenericEmailSystem extends EmailSystem <any, any, any>> (this: GenericEmailSystem, {message}: {message: Message})
 {
 	const signatureVerified = await verifySignature({message});
     if (!signatureVerified) return;
     await handleEvent({message, system: this});
 };
 
-async function handleEvent({message, system}: {message: Message, system: EmailSystem <any, any>})
+async function handleEvent <GenericEmailSystem extends EmailSystem <any, any, any>> ({message, system}: {message: Message, system: GenericEmailSystem})
 {
     const handler = HANDLERS[message.Type];
     if (!handler)
     {
         throw new EmailHandlerNotFoundError();
     };
-	if (handler === 'ignore') return true;
+	if (handler === null) return;
     await handler({message, system});
 };

@@ -67,17 +67,17 @@ export type EmailBaseMetadata = object;
 	Sends email if recipient has no outstanding bounces or complaints.
 	If recipient has outstanding bounces or complaints, throws `MailUnwantedError`.
 */
-export async function send <GenericMetadata extends EmailBaseMetadata, GenericLockId>
+export async function send <GenericEmailSystem extends EmailSystem <GenericMetadata, GenericLockId>, GenericMetadata extends EmailBaseMetadata, GenericLockId>
 (
-	this: EmailSystem <GenericMetadata, GenericLockId>,
-	{ email: customMailOptions, metadata, lockId, useQueue = false, metadataId }:
-	{ email: CustomSendMailOptions, metadata: GenericMetadata, lockId?: GenericLockId, useQueue?: boolean, metadataId?: string }
+	this: GenericEmailSystem,
+	{ email: customMailOptions, metadata, lockId, useQueue = false, emailId }:
+	{ email: CustomSendMailOptions, metadata: GenericMetadata, lockId?: GenericLockId, useQueue?: boolean, emailId?: string }
 )
 {
 	const recipient = resolveRecipient(customMailOptions);
 	const email: Email <GenericMetadata, GenericLockId> =
 	{
-		id: ulid(),
+		id: emailId ?? ulid(),
 		recipient,
 		metadata
 	};
@@ -87,7 +87,7 @@ export async function send <GenericMetadata extends EmailBaseMetadata, GenericLo
 		const locked = await this.callbacks.isLocked({id: lockId});
 		if (locked)
 		{
-			console.warn(`Email cannot be sent as it is locked. Metadata ID: ${metadataId}`);
+			console.warn(`Email cannot be sent as it is locked. Email ID: ${emailId}`);
 			return;
 		};
 	};

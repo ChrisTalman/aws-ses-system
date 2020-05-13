@@ -6,6 +6,7 @@ import Nodemailer from 'nodemailer';
 
 // Internal Modules
 import { send } from './Send';
+import { webhook } from './Webhook';
 import { Scheduler } from './Scheduler';
 
 // Types
@@ -22,14 +23,14 @@ interface Callbacks <GenericMetadata extends EmailBaseMetadata, GenericLockId, G
 	deleteLock: ({id}: {id: GenericLockId}) => Promise<void>;
 	resolveEmailHandlerType: ({email}: {email: Email<GenericMetadata, GenericLockId>}) => GenericEmailHandlerType;
 };
-type EmailHandlers <GenericMetadata extends EmailBaseMetadata, GenericLockId, GenericEmailHandlerType extends string | void> =
+type WebhookHandlers <GenericMetadata extends EmailBaseMetadata, GenericLockId, GenericEmailHandlerType extends string | undefined> =
 	GenericEmailHandlerType extends string
 	?
 		{
-			[Type in GenericEmailHandlerType]: ({email}: {email: Email<GenericMetadata, GenericLockId>}) => Promise<void>;
+			[Type in GenericEmailHandlerType]: (({email}: {email: Email<GenericMetadata, GenericLockId>}) => Promise<void>) | null;
 		}
 	:
-		{}
+		undefined
 ;
 interface EmailOptions
 {
@@ -70,16 +71,16 @@ const AWS_SNS_DEFAULT_VERSION = '2010-03-31';
 export class EmailSystem <GenericMetadata extends EmailBaseMetadata, GenericLockId = void, GenericEmailHandlerType extends string | undefined = undefined>
 {
 	public readonly callbacks: Callbacks <GenericMetadata, GenericLockId, any>;
-	public readonly emailHandlers: EmailHandlers <GenericMetadata, GenericLockId, GenericEmailHandlerType>;
+	public readonly webhookHandlers?: WebhookHandlers <GenericMetadata, GenericLockId, GenericEmailHandlerType>;
 	public readonly email: EmailOptions;
 	public readonly aws: Aws;
 	public readonly scheduler: Scheduler <this>;
 	public readonly nodemailer: ReturnType<typeof Nodemailer.createTransport>;
 	public readonly sns: SNS;
-	constructor({callbacks, emailHandlers, email, aws, queueItemTimeout}: Pick<EmailSystem<GenericMetadata, GenericLockId>, 'callbacks' | 'emailHandlers' | 'email' | 'aws'> & { queueItemTimeout: number })
+	constructor({callbacks, webhookHandlers, email, aws, queueItemTimeout}: Pick<EmailSystem<GenericMetadata, GenericLockId>, 'callbacks' | 'webhookHandlers' | 'email' | 'aws'> & { queueItemTimeout: number })
 	{
 		this.callbacks = callbacks;
-		this.emailHandlers = emailHandlers;
+		this.webhookHandlers = webhookHandlers;
 		this.email = email;
 		this.aws = aws;
 		this.scheduler = new Scheduler({queueItemTimeout, system: this});
@@ -87,6 +88,7 @@ export class EmailSystem <GenericMetadata extends EmailBaseMetadata, GenericLock
 		this.sns = new SNS({apiVersion: this.aws.sns?.version ?? AWS_SNS_DEFAULT_VERSION});
 	};
 	public send = send;
+	public webhook = webhook;
 	private generateNodemailer()
 	{
 		const { accessKeyId, secretAccessKey } = this.aws;
