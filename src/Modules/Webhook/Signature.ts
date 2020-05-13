@@ -1,7 +1,7 @@
 'use strict';
 
 // External Modules
-import { MessageValidator } from '@nathancahill/sns-validator';
+import MessageValidator from '@nathancahill/sns-validator';
 
 // Internal Modules
 import { EmailSignatureInvalidError } from 'src/Modules/Errors';
