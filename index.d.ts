@@ -19,17 +19,21 @@ declare module '@chris-talman/aws-ses-system'
 	}
 
 	// Class Properties
-	interface EmailOptions
+	export interface EmailOptions
 	{
-		from: string;
-		fromName: string;
+		from: EmailOptionsFrom;
 	}
-	interface Aws
+	export interface EmailOptionsFrom
+	{
+		name: string;
+		address: string;
+	}
+	export interface Aws
 	{
 		ses: AwsSes;
 		sns?: AwsSns;
 	}
-	interface AwsSes
+	export interface AwsSes
 	{
 		accessKeyId: string;
 		secretAccessKey: string;
@@ -37,18 +41,18 @@ declare module '@chris-talman/aws-ses-system'
 		version?: string;
 		rateLimits: AwsSesRateLimits;
 	}
-	interface AwsSesRateLimits
+	export interface AwsSesRateLimits
 	{
 		day: number;
 		second: number;
 	}
-	interface AwsSns
+	export interface AwsSns
 	{
 		version?: string;
 	}
 
 	// Callbacks
-	interface Callbacks <GenericMetadata extends EmailBaseMetadata, GenericLockId, GenericEmailHandlerType extends string | undefined>
+	export interface Callbacks <GenericMetadata extends EmailBaseMetadata, GenericLockId, GenericEmailHandlerType extends string | undefined>
 	{
 		isUnwanted: ({recipient}: {recipient: string}) => Promise<boolean>;
 		isLocked: ({id}: {id: GenericLockId}) => Promise<boolean>;
@@ -61,7 +65,7 @@ declare module '@chris-talman/aws-ses-system'
 	}
 
 	// Webhook Handlers
-	type WebhookHandlers <GenericMetadata extends EmailBaseMetadata, GenericLockId, GenericEmailHandlerType extends string | undefined> =
+	export type WebhookHandlers <GenericMetadata extends EmailBaseMetadata, GenericLockId, GenericEmailHandlerType extends string | undefined> =
 		GenericEmailHandlerType extends string
 		?
 			{
@@ -115,12 +119,12 @@ declare module '@chris-talman/aws-ses-system'
 		/** Callback to run before email is sent. If it throws an exception, the email will not be sent. */
 		pre?: () => Promise<void>;
 	}
-	interface SendMailOptionsSes
+	export interface SendMailOptionsSes
 	{
 		ConfigurationSetName: string;
 		Tags: SendMailOptionsSesTags;
 	}
-	interface SendMailOptionsSesTags extends Array<{Name: string, Value: string}> {}
+	export interface SendMailOptionsSesTags extends Array<{Name: string, Value: string}> {}
 	export interface CustomSendMailOptions extends Required<Pick<SendMailOptions, 'to' | 'subject' | 'text' | 'html'>>, Pick<BaseSendMailOptions, 'headers'>
 	{
 		from?: string | Partial<SendMailOptionsAddress>;
