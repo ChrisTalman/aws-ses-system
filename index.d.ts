@@ -29,14 +29,14 @@ declare module '@chris-talman/aws-ses-system'
 	}
 	interface Aws
 	{
-		accessKeyId: string;
-		secretAccessKey: string;
-		configurationSet: string;
 		ses: AwsSes;
 		sns?: AwsSns;
 	}
 	interface AwsSes
 	{
+		accessKeyId: string;
+		secretAccessKey: string;
+		configurationSet: string;
 		version?: string;
 		rateLimits: AwsSesRateLimits;
 	}
