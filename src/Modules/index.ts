@@ -15,8 +15,8 @@ import { Address as MailOptionsFrom } from 'nodemailer/lib/mailer';
 import { Email, EmailBaseMetadata } from './Send';
 interface Callbacks <GenericMetadata extends EmailBaseMetadata, GenericLockId, GenericEmailHandlerType extends string | undefined>
 {
-	isLocked: ({id}: {id: GenericLockId}) => Promise<boolean>;
 	isUnwanted: ({recipient}: {recipient: string}) => Promise<boolean>;
+	isLocked: ({id}: {id: GenericLockId}) => Promise<boolean>;
 	insertEmail: ({id, email}: {id?: string, email: Omit<Email<GenericMetadata, GenericLockId>, 'id'>}) => Promise<Email<GenericMetadata, GenericLockId>>;
 	updateEmail: ({id, update}: {id: string, update: PartialDeep<Email<GenericMetadata, GenericLockId>>}) => Promise<Email<GenericMetadata, GenericLockId>>;
 	consumeRateLimit: () => Promise<boolean>;
