@@ -40,14 +40,14 @@ interface MailOptions
 };
 interface Aws
 {
+	accessKeyId: string;
+	secretAccessKey: string;
+	region: string;
 	ses: AwsSes;
 	sns?: AwsSns;
 };
 interface AwsSes
 {
-	accessKeyId: string;
-	secretAccessKey: string;
-	region: string;
 	configurationSet: string;
 	version?: string;
 	rateLimits: AwsSesRateLimits;
@@ -86,24 +86,38 @@ export class EmailSystem <GenericMetadata extends EmailBaseMetadata, GenericLock
 		this.queueItemTimeout = queueItemTimeout;
 		this.scheduler = new Scheduler({system: this});
 		this.nodemailer = this.generateNodemailer();
-		this.sns = new SNS({apiVersion: this.aws.sns?.version ?? AWS_SNS_DEFAULT_VERSION});
+		this.sns = this.generateSns();
 	};
 	public send = send;
 	public webhook = webhook;
 	private generateNodemailer()
 	{
-		const { accessKeyId, secretAccessKey } = this.aws.ses;
+		const { accessKeyId, secretAccessKey, region } = this.aws;
 		const ses = new SES
 		(
 			{
 				accessKeyId,
 				secretAccessKey,
-				region: this.aws.ses.region,
+				region,
 				apiVersion: this.aws.ses.version ?? AWS_SES_DEFAULT_VERSION
 			}
 		);
 		const nodemailer = Nodemailer.createTransport({SES: ses});
 		return nodemailer;
+	};
+	private generateSns()
+	{
+		const { accessKeyId, secretAccessKey, region } = this.aws;
+		const sns = new SNS
+		(
+			{
+				accessKeyId,
+				secretAccessKey,
+				region,
+				apiVersion: this.aws.sns?.version ?? AWS_SNS_DEFAULT_VERSION
+			}
+		);
+		return sns;
 	};
 };
 

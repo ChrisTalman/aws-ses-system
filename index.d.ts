@@ -30,14 +30,14 @@ declare module '@chris-talman/aws-ses-system'
 	}
 	export interface Aws
 	{
+		accessKeyId: string;
+		secretAccessKey: string;
+		region: string;
 		ses: AwsSes;
 		sns?: AwsSns;
 	}
 	export interface AwsSes
 	{
-		accessKeyId: string;
-		secretAccessKey: string;
-		region: string;
 		configurationSet: string;
 		version?: string;
 		rateLimits: AwsSesRateLimits;
