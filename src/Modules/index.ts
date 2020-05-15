@@ -13,11 +13,11 @@ import { Scheduler } from './Scheduler';
 import { PartialDeep } from '@chris-talman/types-helpers';
 import { Address as MailOptionsFrom } from 'nodemailer/lib/mailer';
 import { Email, EmailBaseMetadata } from './Send';
-interface Callbacks <GenericMetadata extends EmailBaseMetadata, GenericLockId, GenericEmailHandlerType extends string | undefined>
+interface Callbacks <GenericMetadata extends EmailBaseMetadata, GenericLockId, GenericEmailHandlerType>
 {
 	isUnwanted: ({recipient}: {recipient: string}) => Promise<boolean>;
 	isLocked: ({id}: {id: GenericLockId}) => Promise<boolean>;
-	insertEmail: ({id, email}: {id?: string, email: Omit<Email<GenericMetadata, GenericLockId>, 'id'>}) => Promise<Email<GenericMetadata, GenericLockId>>;
+	insertEmail: ({email}: {email: Email<GenericMetadata, GenericLockId>}) => Promise<Email<GenericMetadata, GenericLockId>>;
 	updateEmail: ({id, update}: {id: string, update: PartialDeep<Email<GenericMetadata, GenericLockId>>}) => Promise<Email<GenericMetadata, GenericLockId>>;
 	isDuplicate: ({email}: {email: Email<GenericMetadata, GenericLockId>}) => Promise<boolean>;
 	consumeRateLimit: () => Promise<boolean>;
@@ -25,7 +25,7 @@ interface Callbacks <GenericMetadata extends EmailBaseMetadata, GenericLockId, G
 	deleteLock: ({id}: {id: GenericLockId}) => Promise<void>;
 	resolveWebhookHandlerType: ({email}: {email: Email<GenericMetadata, GenericLockId>}) => GenericEmailHandlerType;
 };
-type WebhookHandlers <GenericMetadata extends EmailBaseMetadata, GenericLockId, GenericEmailHandlerType extends string | undefined> =
+type WebhookHandlers <GenericMetadata extends EmailBaseMetadata, GenericLockId, GenericEmailHandlerType> =
 	GenericEmailHandlerType extends string
 	?
 		{
@@ -67,7 +67,7 @@ const AWS_SES_DEFAULT_VERSION = '2010-12-01';
 const AWS_SNS_DEFAULT_VERSION = '2010-03-31';
 
 // System
-export class EmailSystem <GenericMetadata extends EmailBaseMetadata, GenericLockId = void, GenericEmailHandlerType extends string | undefined = undefined>
+export class EmailSystem <GenericMetadata extends EmailBaseMetadata, GenericLockId = void, GenericEmailHandlerType extends string | void = void>
 {
 	public readonly mailOptions: MailOptions;
 	public readonly callbacks: Callbacks <GenericMetadata, GenericLockId, any>;

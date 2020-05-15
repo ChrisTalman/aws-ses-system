@@ -59,7 +59,7 @@ declare module '@chris-talman/aws-ses-system'
 		/** Determines whether the email is locked, according to its lock ID. */
 		isLocked: ({id}: {id: GenericLockId}) => Promise<boolean>;
 		/** Inserts an email into persistent storage. */
-		insertEmail: ({id, email}: {id?: string, email: Omit<Email<GenericMetadata, GenericLockId>, 'id'>}) => Promise<Email<GenericMetadata, GenericLockId>>;
+		insertEmail: ({email}: {email: Email<GenericMetadata, GenericLockId>}) => Promise<Email<GenericMetadata, GenericLockId>>;
 		/** Updates an email in persistent storage. */
 		updateEmail: ({id, update}: {id: string, update: PartialDeep<Email<GenericMetadata, GenericLockId>>}) => Promise<Email<GenericMetadata, GenericLockId>>;
 		/** Determines whether the email has already been sent. */

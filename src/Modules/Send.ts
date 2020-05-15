@@ -106,7 +106,7 @@ export async function send <GenericEmailSystem extends EmailSystem <GenericMetad
 		headers: customMailOptions.headers
 	};
 	await isEmailUnwanted({email: mailOptions, system: this});
-	await this.callbacks.insertEmail({id: email.id, email});
+	await this.callbacks.insertEmail({email});
 	const result = await this.scheduler.schedule({mailOptions, email, useQueue});
 	return result;
 };
