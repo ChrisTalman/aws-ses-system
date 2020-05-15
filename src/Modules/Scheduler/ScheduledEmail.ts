@@ -6,7 +6,7 @@ import { PromiseController } from '@chris-talman/isomorphic-utilities';
 // Intenral Modules
 import { EmailSystem } from 'src/Modules';
 import { Scheduler } from 'src/Modules/Scheduler';
-import { EmailInvalidError } from 'src/Modules/Errors';
+import { EmailDuplicateError, EmailInvalidError } from 'src/Modules/Errors';
 import { isEmailUnwanted } from 'src/Modules/Send';
 
 // Types
@@ -47,6 +47,7 @@ export class ScheduledEmail
 			try
 			{
 				await isEmailUnwanted({email: this.mailOptions, system: this.system});
+				await isEmailDuplicate({email: this.email, system: this.system});
 			}
 			catch (error)
 			{
@@ -146,5 +147,14 @@ export class ScheduledEmail
 	{
 		this.executed = true;
 		this.executing = false;
+	};
+};
+
+async function isEmailDuplicate({email, system}: {email: Email <any, any>, system: EmailSystem <any>})
+{
+	const duplicate = await system.callbacks.isDuplicate({email});
+	if (duplicate)
+	{
+		throw new EmailDuplicateError();
 	};
 };

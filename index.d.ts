@@ -6,15 +6,15 @@ declare module '@chris-talman/aws-ses-system'
 	import { Address as SendMailOptionsAddress } from 'nodemailer/lib/mailer';
 
 	// Class
-	export class EmailSystem <GenericMetadata extends EmailBaseMetadata, GenericLockId = void, GenericEmailHandlerType extends string | undefined = undefined>
+	export class EmailSystem <GenericMetadata extends EmailBaseMetadata, GenericLockId = void, GenericEmailHandlerType extends string | void = void>
 	{
 		public readonly callbacks: Callbacks <GenericMetadata, GenericLockId, any>;
-		public readonly webhookHandlers?: WebhookHandlers <GenericMetadata, GenericLockId, GenericEmailHandlerType>;
+		public readonly webhookHandlers: WebhookHandlers <GenericMetadata, GenericLockId, GenericEmailHandlerType>;
 		public readonly email: EmailOptions;
 		public readonly aws: Aws;
 		public readonly queueItemTimeout?: number;
-		constructor(parameters: Pick<EmailSystem<GenericMetadata, GenericLockId>, 'callbacks' | 'webhookHandlers' | 'email' | 'aws' | 'queueItemTimeout'>);
-		public send<GenericMetadata extends EmailBaseMetadata, GenericLockId>(parameters: { email: CustomSendMailOptions, metadata: GenericMetadata, lockId?: GenericLockId, useQueue?: boolean, emailId?: string }): Promise<void>;
+		constructor(parameters: Pick<EmailSystem<GenericMetadata, GenericLockId, GenericEmailHandlerType>, 'callbacks' | 'webhookHandlers' | 'email' | 'aws' | 'queueItemTimeout'>);
+		public send(parameters: {email: CustomSendMailOptions, metadata: GenericMetadata, lockId?: GenericLockId, useQueue?: boolean, emailId?: string}): Promise<void>;
 		public webhook(parameters: {message: Message}): Promise<void>;
 	}
 
@@ -52,27 +52,40 @@ declare module '@chris-talman/aws-ses-system'
 	}
 
 	// Callbacks
-	export interface Callbacks <GenericMetadata extends EmailBaseMetadata, GenericLockId, GenericEmailHandlerType extends string | undefined>
+	export interface Callbacks <GenericMetadata extends EmailBaseMetadata, GenericLockId, GenericEmailHandlerType>
 	{
+		/** Determines whether email is unwanted by recipient, according to historical bounces or complaints. */
 		isUnwanted: ({recipient}: {recipient: string}) => Promise<boolean>;
+		/** Determines whether the email is locked, according to its lock ID. */
 		isLocked: ({id}: {id: GenericLockId}) => Promise<boolean>;
+		/** Inserts an email into persistent storage. */
 		insertEmail: ({id, email}: {id?: string, email: Omit<Email<GenericMetadata, GenericLockId>, 'id'>}) => Promise<Email<GenericMetadata, GenericLockId>>;
+		/** Updates an email in persistent storage. */
 		updateEmail: ({id, update}: {id: string, update: PartialDeep<Email<GenericMetadata, GenericLockId>>}) => Promise<Email<GenericMetadata, GenericLockId>>;
+		/** Determines whether the email has already been sent. */
+		isDuplicate: ({email}: {email: Email<GenericMetadata, GenericLockId>}) => Promise<boolean>;
+		/**
+			Attempts to consume a rate limit prior to dispatching an email.
+			If a rate limit has been reached and thus cannot be consumed at this time, and the email is marked as queueable, the email will be queued to be reattempted later.
+		*/
 		consumeRateLimit: () => Promise<boolean>;
+		/** Inserts a lock into persistent storage. */
 		insertLock: ({id, emailId}: {id: GenericLockId, emailId: string}) => Promise<void>;
+		/** Deletes a lock in persistent storage. */
 		deleteLock: ({id}: {id: GenericLockId}) => Promise<void>;
-		resolveEmailHandlerType: ({email}: {email: Email<GenericMetadata, GenericLockId>}) => GenericEmailHandlerType;
+		/** Resolves webhook handler type to be used in determining the handler callback which should be used in response to a webhook. */
+		resolveWebhookHandlerType: ({email}: {email: Email<GenericMetadata, GenericLockId>}) => GenericEmailHandlerType;
 	}
 
 	// Webhook Handlers
-	export type WebhookHandlers <GenericMetadata extends EmailBaseMetadata, GenericLockId, GenericEmailHandlerType extends string | undefined> =
+	export type WebhookHandlers <GenericMetadata extends EmailBaseMetadata, GenericLockId, GenericEmailHandlerType> =
 		GenericEmailHandlerType extends string
 		?
 			{
 				[Type in GenericEmailHandlerType]: (({email}: {email: Email<GenericMetadata, GenericLockId>}) => Promise<void>) | null;
 			}
 		:
-			undefined
+			{}
 	;
 
 	// Email
@@ -155,4 +168,15 @@ declare module '@chris-talman/aws-ses-system'
 	{
 		Subject: string;
 	}
+
+	// Errors
+	export class EmailUnwantedError extends Error {}
+	export class EmailDuplicateError extends Error {}
+	export class EmailInvalidError extends Error {}
+	export class EmailRateLimitError extends Error {}
+	export class EmailQueueTimeoutError extends Error {}
+	export class EmailSignatureInvalidError extends Error {}
+	export class EmailHandlerNotFoundError extends Error {}
+	export class EmailWebookParseError extends Error {}
+	export class EmailWebhookInvalid extends Error {}
 }

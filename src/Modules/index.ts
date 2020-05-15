@@ -19,10 +19,11 @@ interface Callbacks <GenericMetadata extends EmailBaseMetadata, GenericLockId, G
 	isLocked: ({id}: {id: GenericLockId}) => Promise<boolean>;
 	insertEmail: ({id, email}: {id?: string, email: Omit<Email<GenericMetadata, GenericLockId>, 'id'>}) => Promise<Email<GenericMetadata, GenericLockId>>;
 	updateEmail: ({id, update}: {id: string, update: PartialDeep<Email<GenericMetadata, GenericLockId>>}) => Promise<Email<GenericMetadata, GenericLockId>>;
+	isDuplicate: ({email}: {email: Email<GenericMetadata, GenericLockId>}) => Promise<boolean>;
 	consumeRateLimit: () => Promise<boolean>;
 	insertLock: ({id, emailId}: {id: GenericLockId, emailId: string}) => Promise<void>;
 	deleteLock: ({id}: {id: GenericLockId}) => Promise<void>;
-	resolveEmailHandlerType: ({email}: {email: Email<GenericMetadata, GenericLockId>}) => GenericEmailHandlerType;
+	resolveWebhookHandlerType: ({email}: {email: Email<GenericMetadata, GenericLockId>}) => GenericEmailHandlerType;
 };
 type WebhookHandlers <GenericMetadata extends EmailBaseMetadata, GenericLockId, GenericEmailHandlerType extends string | undefined> =
 	GenericEmailHandlerType extends string
@@ -65,6 +66,7 @@ interface AwsSns
 const AWS_SES_DEFAULT_VERSION = '2010-12-01';
 const AWS_SNS_DEFAULT_VERSION = '2010-03-31';
 
+// System
 export class EmailSystem <GenericMetadata extends EmailBaseMetadata, GenericLockId = void, GenericEmailHandlerType extends string | undefined = undefined>
 {
 	public readonly mailOptions: MailOptions;
@@ -96,3 +98,6 @@ export class EmailSystem <GenericMetadata extends EmailBaseMetadata, GenericLock
 		return nodemailer;
 	};
 };
+
+// Errors
+export * from './Errors';

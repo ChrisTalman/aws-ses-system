@@ -12,6 +12,15 @@ export class EmailUnwantedError extends Error
 	};
 };
 
+export class EmailDuplicateError extends Error
+{
+	constructor()
+	{
+		const message = 'Email duplicate';
+		super(message);
+	};
+};
+
 export class EmailInvalidError extends Error
 {
 	constructor({sourceMessage}: {sourceMessage: string})

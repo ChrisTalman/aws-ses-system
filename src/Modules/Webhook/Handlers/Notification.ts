@@ -180,7 +180,7 @@ export async function handleNotification <GenericEmailSystem extends EmailSystem
 		};
 	};
 	const email = await system.callbacks.updateEmail({id: tags.emailId, update});
-	const handlerType = system.callbacks.resolveEmailHandlerType({email});
+	const handlerType = system.callbacks.resolveWebhookHandlerType({email});
 	if (system.webhookHandlers !== undefined)
 	{
 		const handler = system.webhookHandlers[handlerType];
