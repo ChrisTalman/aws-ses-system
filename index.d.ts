@@ -37,6 +37,7 @@ declare module '@chris-talman/aws-ses-system'
 	{
 		accessKeyId: string;
 		secretAccessKey: string;
+		region: string;
 		configurationSet: string;
 		version?: string;
 		rateLimits: AwsSesRateLimits;
