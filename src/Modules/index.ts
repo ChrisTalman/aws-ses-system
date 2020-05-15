@@ -93,7 +93,15 @@ export class EmailSystem <GenericMetadata extends EmailBaseMetadata, GenericLock
 	private generateNodemailer()
 	{
 		const { accessKeyId, secretAccessKey } = this.aws.ses;
-		const ses = new SES({accessKeyId, secretAccessKey, apiVersion: this.aws.ses.version ?? AWS_SES_DEFAULT_VERSION});
+		const ses = new SES
+		(
+			{
+				accessKeyId,
+				secretAccessKey,
+				region: this.aws.ses.region,
+				apiVersion: this.aws.ses.version ?? AWS_SES_DEFAULT_VERSION
+			}
+		);
 		const nodemailer = Nodemailer.createTransport({SES: ses});
 		return nodemailer;
 	};
