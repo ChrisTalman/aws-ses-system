@@ -1,7 +1,7 @@
 {
 	"name": "@chris-talman/aws-ses-system",
 	"description": "System to send emails on AWS SES with metadata, complaint and bounce handling, and locks",
-	"version": "2.0.0",
+	"version": "2.0.1",
 	"licence": "UNLICENSED",
 	"dependencies": {
 		"@chris-talman/isomorphic-utilities": "1.12.1",
