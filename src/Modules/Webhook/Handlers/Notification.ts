@@ -216,7 +216,7 @@ function parseEvent({message}: {message: NotificationMessage})
 	{
 		throw new EmailWebookParseError();
 	};
-	const validation = Joi.compile(SCHEMA).validate(message, JOI_OPTIONS);
+	const validation = Joi.compile(SCHEMA).validate(event, JOI_OPTIONS);
 	if (validation.error)
 	{
 		throw new EmailWebhookInvalid(validation);
