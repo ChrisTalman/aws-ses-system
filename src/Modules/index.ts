@@ -13,6 +13,7 @@ import { Scheduler } from './Scheduler';
 import { PartialDeep } from '@chris-talman/types-helpers';
 import { Address as MailOptionsFrom } from 'nodemailer/lib/mailer';
 import { Email, EmailBaseMetadata } from './Send';
+import { Event } from './Webhook/Handlers/Notification';
 interface Callbacks <GenericMetadata extends EmailBaseMetadata, GenericLockId, GenericEmailHandlerType>
 {
 	isUnwanted: ({recipient}: {recipient: string}) => Promise<boolean>;
@@ -29,7 +30,7 @@ type WebhookHandlers <GenericMetadata extends EmailBaseMetadata, GenericLockId, 
 	GenericEmailHandlerType extends string
 	?
 		{
-			[Type in GenericEmailHandlerType]: (({email}: {email: Email<GenericMetadata, GenericLockId>}) => Promise<void>) | null;
+			[Type in GenericEmailHandlerType]: (({email, event}: {email: Email<GenericMetadata, GenericLockId>, event: Event}) => Promise<void>) | null;
 		}
 	:
 		undefined

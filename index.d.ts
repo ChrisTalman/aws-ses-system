@@ -83,7 +83,7 @@ declare module '@chris-talman/aws-ses-system'
 		GenericEmailHandlerType extends string
 		?
 			{
-				[Type in GenericEmailHandlerType]: (({email}: {email: Email<GenericMetadata, GenericLockId>}) => Promise<void>) | null;
+				[Type in GenericEmailHandlerType]: (({email, event}: {email: Email<GenericMetadata, GenericLockId>, event: Event}) => Promise<void>) | null;
 			}
 		:
 			{}
@@ -168,6 +168,66 @@ declare module '@chris-talman/aws-ses-system'
 	export interface NotificationMessage extends BaseMessage
 	{
 		Subject: string;
+	}
+
+	// Webhook Events
+	export type Event = UntypedEvent | DeliveryEvent | BounceEvent | ComplaintEvent;
+	export interface BaseEvent
+	{
+		eventType: 'Delivery' | 'Send' | 'Reject' | 'Open' | 'Click' | 'Bounce' | 'Complaint' | 'Rendering Failure';
+		mail: EventMail;
+		tags: BaseEventTags;
+	}
+	export interface BaseEventTags
+	{
+		[key: string]: Array<string>;
+	}
+	export interface EventMail
+	{
+		messageId: string;
+		timestamp: string;
+		destination: Array<string>;
+		tags: EventMailTags<EmailTags>;
+	}
+	interface EmailTags
+	{
+		emailId: string;
+	}
+	export type EventMailTags <GenericMetadata> = { [GenericKey in keyof GenericMetadata]: Array<string>; };
+	export interface UntypedEvent extends BaseEvent
+	{
+		eventType: 'Send' | 'Reject' | 'Open' | 'Click' | 'Rendering Failure';
+	}
+	export interface DeliveryEvent extends BaseEvent
+	{
+		eventType: 'Delivery';
+		delivery: DeliveryEventDelivery;
+	}
+	export interface DeliveryEventDelivery
+	{
+		timestamp: string;
+	}
+	export interface BounceEvent extends BaseEvent
+	{
+		eventType: 'Bounce';
+		bounce: BounceEventBounce;
+	}
+	export interface BounceEventBounce
+	{
+		feedbackId: string;
+		bounceType: string;
+		bounceSubType: string;
+		timestamp: string;
+	}
+	export interface ComplaintEvent extends BaseEvent
+	{
+		eventType: 'Complaint';
+		complaint: ComplaintEventComplaint;
+	}
+	export interface ComplaintEventComplaint
+	{
+		feedbackId: string;
+		timestamp: string;
 	}
 
 	// Errors

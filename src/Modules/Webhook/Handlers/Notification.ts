@@ -13,7 +13,7 @@ import { EmailWebookParseError, EmailWebhookInvalid } from 'src/Modules/Errors';
 import { PartialDeep } from '@chris-talman/types-helpers';
 import { Email } from 'src/Modules/Send';
 import { NotificationMessage } from 'src/Modules/Webhook';
-export type Event =  UntypedEvent | DeliveryEvent | BounceEvent | ComplaintEvent;
+export type Event = UntypedEvent | DeliveryEvent | BounceEvent | ComplaintEvent;
 export interface BaseEvent
 {
 	eventType: 'Delivery' | 'Send' | 'Reject' | 'Open' | 'Click' | 'Bounce' | 'Complaint' | 'Rendering Failure';
@@ -189,7 +189,7 @@ export async function handleNotification <GenericEmailSystem extends EmailSystem
 			let handled = true;
 			try
 			{
-				await handler({email});
+				await handler({email, event});
 			}
 			catch (error)
 			{
