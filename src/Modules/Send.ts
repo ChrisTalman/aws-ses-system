@@ -31,6 +31,8 @@ export interface CustomSendMailOptions extends Required<Pick<SendMailOptions, 't
 export interface Email <GenericMetadata extends EmailBaseMetadata, GenericLockId>
 {
 	id: string;
+	/** Unix milliseconds at which email was created, before being queued for sending. */
+	created: number;
 	/** Unix milliseconds at which the email was queued for sending. */
 	queued?: number;
 	recipient: string;
@@ -78,6 +80,7 @@ export async function send <GenericEmailSystem extends EmailSystem <GenericMetad
 	const email: Email <GenericMetadata, GenericLockId> =
 	{
 		id: emailId ?? ulid(),
+		created: Date.now(),
 		recipient,
 		metadata
 	};

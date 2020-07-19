@@ -93,6 +93,8 @@ declare module '@chris-talman/aws-ses-system'
 	export interface Email <GenericMetadata extends EmailBaseMetadata, GenericLockId>
 	{
 		id: string;
+		/** Unix milliseconds at which email was created, before being queued for sending. */
+		created: number;
 		/** Unix milliseconds at which the email was queued for sending. */
 		queued?: number;
 		recipient: string;
