@@ -9,7 +9,6 @@
 		"@nathancahill/sns-validator": "0.3.4",
 		"@types/nodemailer": "6.4.0",
 		"aws-sdk": "2.674.0",
-		"joi": "14.3.1",
 		"moment": "2.25.3",
 		"nodemailer": "6.4.6",
 		"ulid": "2.3.0"
