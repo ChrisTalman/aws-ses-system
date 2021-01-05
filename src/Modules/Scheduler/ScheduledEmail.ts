@@ -71,11 +71,11 @@ export class ScheduledEmail
 			this.executing = false;
 			return;
 		};
-		if (this.email.metadata.lockId)
+		if (this.email.lockId)
 		{
 			try
 			{
-				await this.system.callbacks.insertLock({id: this.email.metadata.lockId, emailId: this.email.id});
+				await this.system.callbacks.insertLock({id: this.email.lockId, emailId: this.email.id});
 			}
 			catch (error)
 			{
@@ -95,11 +95,11 @@ export class ScheduledEmail
 			{
 				this.executing = false;
 				this.scheduler.guaranteeQueueItem(this);
-				if (this.email.metadata.lockId)
+				if (this.email.lockId)
 				{
 					try
 					{
-						await this.system.callbacks.deleteLock({id: this.email.metadata.lockId});
+						await this.system.callbacks.deleteLock({id: this.email.lockId});
 					}
 					catch (error)
 					{
@@ -111,11 +111,11 @@ export class ScheduledEmail
 			else if (error.code === 'InvalidParameterValue' && INVALID_PARAMETER_VALUE_ERROR_MESSAGE_EXPRESSION.test(error.message))
 			{
 				const emailInvalidError = new EmailInvalidError({sourceMessage: error.message});
-				if (this.email.metadata.lockId)
+				if (this.email.lockId)
 				{
 					try
 					{
-						await this.system.callbacks.deleteLock({id: this.email.metadata.lockId});
+						await this.system.callbacks.deleteLock({id: this.email.lockId});
 						console.log(`Deleted lock after nonlockable error. Email ID: ${this.email.id}`);
 					}
 					catch (error)
