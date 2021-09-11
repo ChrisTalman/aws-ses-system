@@ -1,7 +1,7 @@
 {
 	"name": "@chris-talman/aws-ses-system",
 	"description": "System to send emails on AWS SES with metadata, complaint and bounce handling, and locks",
-	"version": "2.2.2",
+	"version": "2.2.3",
 	"licence": "UNLICENSED",
 	"dependencies": {
 		"@chris-talman/isomorphic-utilities": "1.12.1",
@@ -10,7 +10,7 @@
 		"@types/nodemailer": "6.4.0",
 		"aws-sdk": "2.674.0",
 		"moment": "2.25.3",
-		"nodemailer": "6.4.6",
+		"nodemailer": "6.6.3",
 		"ulid": "2.3.0"
 	},
 	"devDependencies": {
